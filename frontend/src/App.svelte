@@ -13,6 +13,10 @@
   let username = "";
   let password = "";
   let selectedStudent = null;
+  let currentPage = 1;
+  let totalPages = 1;
+  let totalStudents = 0;
+  let limit = 2;
 
   const API_URL = "http://localhost:3000";
 
@@ -58,10 +62,17 @@
   }
 
   async function fetchStudents() {
-    const response = await fetch(`${API_URL}/students`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    students = await response.json();
+    const response = await fetch(
+      `${API_URL}/students?page=${currentPage}&limit=${limit}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const data = await response.json();
+    students = data.students;
+    currentPage = data.currentPage;
+    totalPages = data.totalPages;
+    totalStudents = data.totalStudents;
   }
 
   async function addStudent() {
@@ -118,12 +129,28 @@
 
   async function searchStudents() {
     const response = await fetch(
-      `${API_URL}/students/search?query=${searchQuery}`,
+      `${API_URL}/students/search?query=${searchQuery}&page=${currentPage}&limit=${limit}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    students = await response.json();
+    const data = await response.json();
+    students = data.students;
+    // currentPage = data.currentPage;
+    currentPage = 1;
+    totalPages = data.totalPages;
+    totalStudents = data.totalStudents;
+  }
+
+  async function changePage(newPage) {
+    if (newPage >= 1 && newPage <= totalPages) {
+      currentPage = newPage;
+      if (searchQuery) {
+        await searchStudents();
+      } else {
+        await fetchStudents();
+      }
+    }
   }
 
   async function callStudent(id) {
@@ -255,6 +282,22 @@
           {/if}
         {/each}
       </table>
+      {#if !students.length}
+        <p class="no-students-found">No students found :(</p>
+      {/if}
+
+      <div class="pagination">
+        <button
+          on:click={() => changePage(currentPage - 1)}
+          disabled={currentPage === 1}>Previous</button
+        >
+        <span>Page {currentPage} of {totalPages}</span>
+        <button
+          on:click={() => changePage(currentPage + 1)}
+          disabled={currentPage === totalPages}>Next</button
+        >
+      </div>
+      <p>Total Students: {totalStudents}</p>
     </div>
   {/if}
 </main>
@@ -317,5 +360,28 @@
 
   button {
     margin: 0 5px;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .pagination button {
+    margin: 0 10px;
+  }
+
+  .pagination span {
+    margin: 0 10px;
+  }
+
+  .no-students-found {
+    text-align: center;
+    margin: 20px 0;
+    padding: 20px;
+    font-size: 18px;
+    font-weight: bold;
   }
 </style>

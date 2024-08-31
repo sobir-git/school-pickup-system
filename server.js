@@ -165,12 +165,30 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/students', authenticateToken, (req, res) => {
-  db.all('SELECT * FROM students', [], (err, rows) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  db.all('SELECT COUNT(*) as total FROM students', [], (err, countResult) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
     }
-    res.json(rows);
+
+    const total = countResult[0].total;
+
+    db.all('SELECT * FROM students LIMIT ? OFFSET ?', [limit, offset], (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({
+        students: rows,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalStudents: total
+      });
+    });
   });
 });
 
@@ -208,12 +226,30 @@ app.delete('/students/:id', authenticateToken, isAdmin, (req, res) => {
 
 app.get('/students/search', authenticateToken, (req, res) => {
   const { query } = req.query;
-  db.all('SELECT * FROM students WHERE name LIKE ?', [`%${query}%`], (err, rows) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  db.all('SELECT COUNT(*) as total FROM students WHERE name LIKE ?', [`%${query}%`], (err, countResult) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
     }
-    res.json(rows);
+
+    const total = countResult[0].total;
+
+    db.all('SELECT * FROM students WHERE name LIKE ? LIMIT ? OFFSET ?', [`%${query}%`, limit, offset], (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({
+        students: rows,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalStudents: total
+      });
+    });
   });
 });
 
