@@ -16,7 +16,8 @@
   let currentPage = 1;
   let totalPages = 1;
   let totalStudents = 0;
-  let limit = 2;
+  let limit = 10;
+  let searchTimeout;
 
   const API_URL = "http://localhost:3000";
 
@@ -127,6 +128,18 @@
     }
   }
 
+  function debounce(func, wait) {
+    return (...args) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  const debouncedSearch = debounce(async () => {
+    currentPage = 1;
+    await searchStudents();
+  }, 300); // Wait for 300ms of inactivity before searching
+
   async function searchStudents() {
     const response = await fetch(
       `${API_URL}/students/search?query=${searchQuery}&page=${currentPage}&limit=${limit}`,
@@ -136,8 +149,7 @@
     );
     const data = await response.json();
     students = data.students;
-    // currentPage = data.currentPage;
-    currentPage = 1;
+    currentPage = data.currentPage;
     totalPages = data.totalPages;
     totalStudents = data.totalStudents;
   }
@@ -244,8 +256,11 @@
 
     <div>
       <h2>Search Students</h2>
-      <input bind:value={searchQuery} placeholder="Search by name" />
-      <button on:click={searchStudents}>Search</button>
+      <input
+        bind:value={searchQuery}
+        placeholder="Search by name"
+        on:input={debouncedSearch}
+      />
     </div>
     <div>
       <h2>Student List</h2>
