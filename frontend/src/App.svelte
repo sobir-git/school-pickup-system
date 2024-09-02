@@ -20,7 +20,7 @@
   let limit = 10;
   let searchTimeout;
 
-  const API_URL = "http://localhost:3000";
+  const API_URL = `http://${window.location.hostname}:3000`;
 
   async function checkServerState() {
     try {
