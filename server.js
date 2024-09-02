@@ -27,7 +27,9 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     grade TEXT NOT NULL,
-    audio_file TEXT NOT NULL
+    audio_file TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -177,7 +179,7 @@ app.get('/students', authenticateToken, (req, res) => {
 
     const total = countResult[0].total;
 
-    db.all('SELECT * FROM students LIMIT ? OFFSET ?', [limit, offset], (err, rows) => {
+    db.all('SELECT * FROM students ORDER BY updated_at DESC LIMIT ? OFFSET ?', [limit, offset], (err, rows) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
@@ -194,24 +196,31 @@ app.get('/students', authenticateToken, (req, res) => {
 
 app.post('/students', authenticateToken, isAdmin, (req, res) => {
   const { name, grade, audio_file } = req.body;
-  db.run('INSERT INTO students (name, grade, audio_file) VALUES (?, ?, ?)', [name, grade, audio_file], function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json({ id: this.lastID });
-  });
+  const currentTimestamp = new Date().toISOString();
+  db.run('INSERT INTO students (name, grade, audio_file, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    [name, grade, audio_file, currentTimestamp, currentTimestamp], function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ id: this.lastID });
+    });
 });
 
 app.put('/students/:id', authenticateToken, isAdmin, (req, res) => {
   const { name, grade, audio_file } = req.body;
-  db.run('UPDATE students SET name = ?, grade = ?, audio_file = ? WHERE id = ?', [name, grade, audio_file, req.params.id], function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+  const currentTimestamp = new Date().toISOString();
+  db.run(
+    'UPDATE students SET name = ?, grade = ?, audio_file = ?, updated_at = ? WHERE id = ?',
+    [name, grade, audio_file, currentTimestamp, req.params.id],
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ changes: this.changes });
     }
-    res.json({ changes: this.changes });
-  });
+  );
 });
 
 app.delete('/students/:id', authenticateToken, isAdmin, (req, res) => {
