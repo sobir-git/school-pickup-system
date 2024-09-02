@@ -65,7 +65,6 @@ const JWT_SECRET = 'your_jwt_secret'; // Replace with a secure secret in product
 
 // Audio playback setup
 let isPlaying = false;
-let currentAudioEndTime = 0;
 
 function playAudio(filename) {
   return new Promise((resolve, reject) => {
@@ -288,8 +287,8 @@ app.post('/call/:id', authenticateToken, async (req, res) => {
   });
 });
 
-app.get('/audio-state', authenticateToken, (req, res) => {
-  res.json({ isPlaying, currentAudioEndTime });
+app.get('/server-state', authenticateToken, (req, res) => {
+  res.json({ isPlaying });
 });
 
 app.post('/play-audio/:filename', authenticateToken, isAdmin, async (req, res) => {

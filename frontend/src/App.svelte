@@ -7,6 +7,7 @@
   let audioFile = "";
   let searchQuery = "";
   let editingStudent = null;
+  let serverAvailable = true;
   let isPlaying = false;
   let token = localStorage.getItem("token");
   let role = localStorage.getItem("role");
@@ -21,10 +22,29 @@
 
   const API_URL = "http://localhost:3000";
 
+  async function checkServerState() {
+    try {
+      const response = await fetch(`${API_URL}/server-state`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 403) {
+        serverAvailable = true;
+        isPlaying = false;
+      } else {
+        const data = await response.json();
+        isPlaying = data.isPlaying;
+        serverAvailable = true;
+      }
+    } catch (error) {
+      serverAvailable = false;
+      console.error("Error checking server state:", error);
+    }
+  }
+
   onMount(async () => {
+    setInterval(checkServerState, 1000);
     if (token) {
       await fetchStudents();
-      setInterval(checkAudioState, 1000);
     }
   });
 
@@ -332,6 +352,19 @@
       <p>Total Students: {totalStudents}</p>
     </div>
   {/if}
+
+  <!-- Server Unavailable Popup -->
+  {#if !serverAvailable}
+    <div class="server-unavailable-popup">
+      <div class="server-unavailable-content">
+        <h2>Server is not available :(</h2>
+        <p>
+          We're sorry, but the server appears to be unavailable at the moment.
+          Please try again later.
+        </p>
+      </div>
+    </div>
+  {/if}
 </main>
 
 <style>
@@ -415,5 +448,34 @@
     padding: 20px;
     font-size: 18px;
     font-weight: bold;
+  }
+
+  .server-unavailable-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .server-unavailable-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 400px;
+  }
+
+  .server-unavailable-content h2 {
+    margin-top: 0;
+  }
+
+  .server-unavailable-content p {
+    margin-bottom: 0;
   }
 </style>
