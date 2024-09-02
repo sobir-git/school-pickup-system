@@ -63,6 +63,10 @@
   }
 
   async function fetchStudents() {
+    if (role === "user") {
+      return;
+    }
+
     const response = await fetch(
       `${API_URL}/students?page=${currentPage}&limit=${limit}`,
       {
@@ -141,17 +145,24 @@
   }, 300); // Wait for 300ms of inactivity before searching
 
   async function searchStudents() {
-    const response = await fetch(
-      `${API_URL}/students/search?query=${searchQuery}&page=${currentPage}&limit=${limit}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    const data = await response.json();
-    students = data.students;
-    currentPage = data.currentPage;
-    totalPages = data.totalPages;
-    totalStudents = data.totalStudents;
+    if (role === "user" && searchQuery.trim() === "") {
+      students = [];
+      currentPage = 1;
+      totalPages = 1;
+      totalStudents = 0;
+    } else {
+      const response = await fetch(
+        `${API_URL}/students/search?query=${searchQuery}&page=${currentPage}&limit=${limit}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      const data = await response.json();
+      students = data.students;
+      currentPage = data.currentPage;
+      totalPages = data.totalPages;
+      totalStudents = data.totalStudents;
+    }
   }
 
   async function changePage(newPage) {
@@ -298,7 +309,13 @@
         {/each}
       </table>
       {#if !students.length}
-        <p class="no-students-found">No students found :(</p>
+        {#if searchQuery.trim() === ""}
+          <p class="no-students-found">Try searching for a student.</p>
+        {:else}
+          <p class="no-students-found">
+            No students found for search query "{searchQuery}".
+          </p>
+        {/if}
       {/if}
 
       <div class="pagination">
