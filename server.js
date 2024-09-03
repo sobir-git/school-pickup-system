@@ -122,47 +122,30 @@ function playAudio(filename) {
   });
 }
 
-function playCallStudentAudio(filename) {
-  return new Promise((resolve, reject) => {
+async function playCallStudentAudio(filename) {
+  if (isPlaying) {
+    throw new Error('An audio is already playing');
+  }
 
-    console.log(`Playing audio: ${filename}`);
+  if (!filename) {
+    throw new Error('Filename is null');
+  }
 
-    if (!filename) {
-      console.error('Error playing audio: filename is null');
-      reject(new Error('filename is null'));
-      return;
-    }
+  try {
+    isPlaying = true;
 
-    const inviteFilePath = path.join(__dirname, 'audio', 'invite.mp3');
+    // Play the main audio file
+    await playAudio(filename);
 
-    const filePath = path.join(__dirname, 'audio', filename);
-    fs.access(filePath, (err) => {
-      if (err) {
-        console.error(`Audio file doesn't exist: ${filePath}`);
-        reject(err);
-      } else {
-        isPlaying = true;
-        player.play(filePath, (err) => {
-          if (err) {
-            console.error('Error playing audio:', err);
-            reject(err);
-          } else {
-            setTimeout(() => {
-              player.play(inviteFilePath, (err) => {
-                if (err) {
-                  console.error('Error playing invite audio:', err);
-                  reject(err);
-                } else {
-                  isPlaying = false;
-                  resolve();
-                }
-              });
-            }, 500);
-          }
-        });
-      }
-    });
-  });
+    // Play the invite audio file
+    await playAudio('invite.mp3');
+
+  } catch (err) {
+    console.error('Error playing audio:', err);
+    throw err;
+  } finally {
+    isPlaying = false;
+  }
 }
 
 // Middleware to verify JWT token
