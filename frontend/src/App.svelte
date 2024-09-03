@@ -33,6 +33,11 @@
       if (response.status === 403) {
         serverAvailable = true;
         isPlaying = false;
+        token = null;
+        role = null;
+        // localStorage.removeItem("token");
+        // localStorage.removeItem("role");
+        console.log("Server is unavailable");
       } else {
         const data = await response.json();
         isPlaying = data.isPlaying;
