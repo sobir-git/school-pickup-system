@@ -383,6 +383,22 @@ app.get('/users', authenticateToken, isAdmin, (req, res) => {
   });
 });
 
+// Check if --serve-frontend argument is provided
+const serveFrontend = process.argv.includes('--serve-frontend');
+
+if (serveFrontend) {
+  // Serve the frontend production build
+  app.use(express.static(path.join(__dirname, 'frontend/public')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'frontend/public', 'index.html'));
+  });
+
+  console.log('Frontend serving enabled via command-line argument.');
+} else {
+  console.log('Frontend serving disabled.');
+}
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

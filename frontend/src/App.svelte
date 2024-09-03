@@ -25,7 +25,10 @@
   async function checkServerState() {
     try {
       const response = await fetch(`${API_URL}/server-state`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache",
+        },
       });
       if (response.status === 403) {
         serverAvailable = true;
